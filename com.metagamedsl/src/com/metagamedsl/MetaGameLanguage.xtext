@@ -1,0 +1,171 @@
+grammar com.metagamedsl.MetaGameLanguage with org.eclipse.xtext.common.Terminals
+ 
+generate metaGameLanguage "http://www.metagamedsl.com/MetaGameLanguage"
+
+Game:
+	'Game' name=ID grid=GridSize fields+=Property* declarations+=Declaration* actions+=Action*  winningState=WinningState? executions+=Execution*
+;
+
+GridSize:
+	'Grid' 'size' size=Coordinates
+;
+
+Declaration:
+	 Object | Location
+;
+
+Location:
+	'Location' declarations+=LocationDeclaration+ properties+=Property*
+;
+
+LocationDeclaration:
+	name=ID coordinates+=Coordinates+
+;
+
+Object:
+	'Object' declarations+=ObjectDeclaration+ properties+=Property*
+;
+
+ObjectDeclaration:
+	name=ID coordinates=Coordinates
+;
+
+Coordinates:
+	'('x=INT','y=INT')'
+;
+
+Property:
+	{BoolExp} 'truth' 'value' name=ID '=' bool_exp=BooleanExp | {NumberExp} 'number' name=ID '=' math_exp=MathExp
+;
+
+Action:
+	declaration=ActionDeclaration condition=ConditionDeclaration effect=EffectDeclaration
+;
+
+ActionDeclaration:
+	'Action' name=ID '(' args=Arguments? ')'
+;
+
+Execution:
+	 action_name=[ActionDeclaration]  '(' executionArgs=ExecutionArg? ')'
+;
+
+ExecutionArg:
+	executionArgs+=ExecutionDeclaration (','executionArgs+=ExecutionDeclaration)*
+;
+
+ExecutionDeclaration:
+	Argument | Coordinates
+;
+
+Arguments:
+	arguments+=Argument (',' arguments+=Argument)*
+;
+
+Argument:
+	name=ID
+;
+
+ConditionDeclaration:
+	'Condition' conditions=Conditions?
+;
+
+Conditions:
+	conditions+=ActionCondition (',' conditions+=ActionCondition)*
+;
+
+ActionCondition:
+	VarActionCondition | InternalFunction | BooleanExp
+;
+
+VarActionCondition:
+	not='!'? argument=[Argument] '.' property=[Property]
+;
+
+InternalFunction:
+	not='!'? internal_name=InternalName '(' arguments=Arguments? ')'
+;
+
+PropertyAssignment returns Assignment:
+	NormalAssignment | IncDecAssignment
+;
+
+NormalAssignment returns Assignment:
+	(dec_name=ID '.')? assign_name=[Property] op=AssignOperator exp=MathExp
+;
+
+AssignOperator:
+	{Eq} '=' | {PlusEq} '+=' | {MinusEq} '-=' | {MultEq} '*=' | {DivEq} '/='
+;
+
+IncDecAssignment returns Assignment:
+	(dec_name=ID '.')? assign_name=[Property] op=IncDecOp
+;
+
+IncDecOp:
+	{Inc} '++' | {Dec} '--'
+;
+
+InternalName:
+	'isNeighbor' | 'isHere' | 'goTo'
+;
+
+EffectDeclaration:
+	'Effect' effects=Effects?
+;
+
+Effects:
+	effects+=CustomEffects (',' effects+=CustomEffects)*
+;
+
+CustomEffects:
+	PropertyAssignment | InternalFunction
+;
+
+WinningState:
+	'WinningState' conditions=WinningConditions
+;
+
+WinningConditions:
+	cond+=WinningCondition (',' cond+=WinningCondition)*
+;
+
+WinningCondition:
+	VarWinCondition | InternalFunction | BooleanExp
+;
+
+VarWinCondition:
+	not='!'? var_name=ID '.' property=[Property]
+;
+
+BooleanExp returns Proposition:
+	LogicExp (({And.left=current} '&&' | {Or.left=current} '||') right=LogicExp)*
+;
+
+LogicExp returns Proposition:
+	Comparison | {BooleanValue} bool=BooleanValue
+;
+
+BooleanValue:
+	'true' | 'false'
+;
+
+Comparison returns Proposition:
+	{Comparison} left=MathExp operator=EqOp right=MathExp
+;
+
+MathExp returns Expression:
+	Factor (({Add.left=current} '+' | {Sub.left=current} '-') right=Factor)*
+;
+
+Factor returns Expression:
+	Prim (({Mult.left=current} '*' | {Div.left=current} '/') right=Prim)*
+;
+
+Prim returns Expression:
+	{Number} value=INT | {Parenthesis} '(' exp=MathExp ')' | {Variable} var_prop=[Property] | {LocalVariable} var_local=ID '.' var_prop=[Property]
+;
+
+EqOp:
+	'==' | '>=' | '<=' | '>' | '<'
+;
