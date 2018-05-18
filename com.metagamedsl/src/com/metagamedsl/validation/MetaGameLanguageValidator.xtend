@@ -36,7 +36,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
      */
     @Check
     def void checkGridCoordinates(GridSize grid) {
-    	// Values and V
+    	// Variables
     	var minValue = 1
     	var maxValue = 10
     	var x = grid.size.x
@@ -55,8 +55,10 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 * @param
 	 */
 	@Check
-	def void checkCoordinatesComparedToGrid(GridSize grid, Declaration declarations){
-		
+	def void checkCoordinatesComparedToGrid(GridSize grid, Game game){
+		var grid_x = grid.size.x
+		var grid_y = grid.size.y
+
 	}
 	
 	/**
