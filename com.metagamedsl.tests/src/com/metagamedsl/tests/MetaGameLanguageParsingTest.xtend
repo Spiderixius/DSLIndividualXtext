@@ -11,6 +11,9 @@ import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import com.metagamedsl.metaGameLanguage.Game
+import org.eclipse.xtext.testing.validation.ValidationTestHelper
+import com.metagamedsl.metaGameLanguage.Expression
+import com.metagamedsl.metaGameLanguage.PlusEq
 
 @RunWith(XtextRunner)
 @InjectWith(MetaGameLanguageInjectorProvider)
@@ -18,12 +21,58 @@ class MetaGameLanguageParsingTest {
 	@Inject
 	ParseHelper<Game> parseHelper
 	
+	@Inject
+	extension  ValidationTestHelper
+	
 	@Test
 	def void loadModel() {
 		val result = parseHelper.parse('''
-			Hello Xtext!
+			Game HW 
+			Grid size (10,10)
 		''')
-		Assert.assertNotNull(result)
-		Assert.assertTrue(result.eResource.errors.isEmpty)
+		Assert.assertNotNull(result) 
+	}
+	
+	@Test
+	def void testForwardReferences() {
+		// Test what happens if there is forward reference
+					   
+		val result = parseHelper.parse('''
+			Game HW 
+			Grid size (1,11)
+			
+			number i = j
+			number j = 10
+		''')
+		
+	}
+	
+	@Test
+	def void testPlusMultiPrecedence() {
+		// Test precedence how having a weak and strong operator
+	}
+	
+	@Test
+	def void testComparison() {
+		// Test if saying 5 < 2 gives true or false
+	}
+	
+	@Test
+	def void testEqualityAndComparison() {
+		// Test if saying 5 <= 5 gives true or false
+	}
+	
+	@Test
+	def void testAndOR() {
+		// Test that && || work
+	}
+	
+	@Test
+	def void testCodeGeneratedAsExpected() {
+		
 	}
 }
+
+
+
+

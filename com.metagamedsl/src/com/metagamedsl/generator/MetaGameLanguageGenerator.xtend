@@ -140,7 +140,7 @@ public class «game.name» extends FluentMachine {
         global("«game.name»")
         «FOR f: game.fields»«f.generateProperty("")»«ENDFOR»
         «FOR d: game.declarations»«d.generateDeclaration»«ENDFOR»
-        «IF game.winningState != null»
+        «IF game.winningState !== null»
         .winningState(new IWinningCallback() {
         	
         	@Override
