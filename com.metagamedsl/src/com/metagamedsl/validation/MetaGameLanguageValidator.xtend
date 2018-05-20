@@ -30,8 +30,9 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 */
 	@Check
 	def void checkNameStartsWithCapital(Game game) {
+		var literal = MetaGameLanguagePackage.Literals.GAME__NAME
 		if (!Character.isUpperCase(game.name.charAt(0))) {
-			warning("Name should start with a capital.", MetaGameLanguagePackage.Literals.GAME__NAME, INVALID_NAME)
+			warning("Name " + game.name + " should start with a capital.", literal, INVALID_NAME)
 		}
 	}
 
@@ -49,9 +50,9 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		var gridSize = MetaGameLanguagePackage.Literals.GRID_SIZE__SIZE
 
 		if (x < minValue || y < minValue) {
-			error("Grid size must be at least 1.", gridSize)
+			error("Grid size must be at least " + minValue + ".", gridSize)
 		} else if (x > maxValue || y > maxValue) {
-			error("Grid size must be 10 or under.", gridSize)
+			error("Grid size must be " + maxValue + " or under.", gridSize)
 		}
 	}
 
@@ -95,13 +96,12 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	@Check
 	def void checkObjectsAreUniqueName(Object object) {
 		var map = new HashMap<String, ObjectDeclaration>
-		var literal = MetaGameLanguagePackage.Literals.OBJECT__DECLARATIONS
-		var literal2 = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
+		var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
 		
 		for (ObjectDeclaration objectDeclaration : object.declarations) {
 			if (map.containsKey(objectDeclaration.name)) {
-				error("Field name " + objectDeclaration.name + " must be unique.", objectDeclaration, literal2, DUPLICATE_NAME)
-				error("Field name " + objectDeclaration.name + " must be unique.", map.get(objectDeclaration.name), literal2, DUPLICATE_NAME)
+				error("Field name " + objectDeclaration.name + " must be unique.", objectDeclaration, literal, DUPLICATE_NAME)
+				error("Field name " + objectDeclaration.name + " must be unique.", map.get(objectDeclaration.name), literal, DUPLICATE_NAME)
 			} else {
 				map.put(objectDeclaration.name, objectDeclaration)
 			}

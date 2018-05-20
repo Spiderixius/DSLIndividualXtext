@@ -119,7 +119,11 @@ Effects:
 ;
 
 CustomEffects:
-	PropertyAssignment | InternalFunction
+	PropertyAssignment | InternalFunction | ExtendedFunctions
+;
+
+ExtendedFunctions:
+	{EF} 'goTo2' '(' arguments=Arguments? ')'
 ;
 
 WinningState:
