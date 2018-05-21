@@ -13,6 +13,9 @@ import java.util.HashMap
 import com.metagamedsl.metaGameLanguage.Object
 import com.metagamedsl.metaGameLanguage.Declaration
 import com.metagamedsl.services.MetaGameLanguageGrammarAccess.ObjectDeclarationElements
+import com.metagamedsl.metaGameLanguage.Coordinates
+import com.metagamedsl.metaGameLanguage.LocationDeclaration
+import com.metagamedsl.metaGameLanguage.Location
 
 /**
  * This class contains custom validation rules. 
@@ -23,6 +26,8 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 
 	public static val INVALID_NAME = "invalidName"
 	public static val DUPLICATE_NAME = "duplicateName"
+	public static val MIN_GRID_VALUE = 0
+	public static val MAX_GRID_VALUE = 10
 
 	/**
 	 * The method checks whether the name of the game starts with a capital letter.
@@ -52,18 +57,15 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 
 		 * Grid size(11,1)         << Should give error  
 		 */
-		
 		// Variables
-		var minValue = 1
-		var maxValue = 10
 		var x = grid.size.x
 		var y = grid.size.y
 		var gridSize = MetaGameLanguagePackage.Literals.GRID_SIZE__SIZE
 
-		if (x < minValue || y < minValue) {
-			error("Grid size must be at least " + minValue + ".", gridSize)
-		} else if (x > maxValue || y > maxValue) {
-			error("Grid size must be " + maxValue + " or under.", gridSize)
+		if (x < MIN_GRID_VALUE || y < MIN_GRID_VALUE) {
+			error("Grid size must be at least " + MIN_GRID_VALUE + ".", gridSize)
+		} else if (x > MAX_GRID_VALUE || y > MAX_GRID_VALUE) {
+			error("Grid size must be " + MAX_GRID_VALUE + " or under.", gridSize)
 		}
 	}
 
@@ -72,26 +74,35 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 * @param
 	 */
 	@Check
-	def void checkCoordinatesComparedToGrid(GridSize grid, ObjectDeclaration obj) {
+	def void checkCoordinatesComparedToGrid(Game game) {
 		/*
 		 * If Grid size is set to 10,10 then coordinates in other objects/locations 
-		 * shouldn't be able to declare coordinates such as 30,10, since 10 exceeds
+		 * shouldn't be able to declare coordinates such as 30,10, since 30 exceeds
 		 * 10
 		 * 
 		 * Grid Size(10,10)
 		 * 
 		 * Object P1 (14,10)        << Should give an error on x coordinate
 		 */
-		
-		var obj_x = obj.coordinates.x
-		var obj_y = obj.coordinates.x
-		var grid_x = grid.size.x
-		var grid_y = grid.size.y
+		var grid_x = game.grid.size.x
+		var grid_y = game.grid.size.y
 
-		var obj_coordinates = MetaGameLanguagePackage.Literals.OBJECT__DECLARATIONS
+		var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__COORDINATES
 
-		if (obj_x < grid_x || obj_y > grid_y) {
-			error("Coordinates most not exceed grid coordinates.", obj_coordinates)
+		for (Declaration d : game.declarations) {
+			if (d instanceof Object) {
+				var object_x = d as Object
+				for (ObjectDeclaration od : object_x.declarations) {
+					// objectMap.put(od.name, od)
+					if (od.coordinates.x < MIN_GRID_VALUE || od.coordinates.y < MIN_GRID_VALUE) {
+						error("Coordinate size must be " + MIN_GRID_VALUE + " or above", od, literal)
+					} else if (od.coordinates.x > grid_x || od.coordinates.y > grid_y) {
+						error(
+							"Coordinate size (" + od.coordinates.x + ", " + od.coordinates.y +
+								") must not be more than grid size (" + grid_x + ", " + grid_y + ").", od, literal)
+					}
+				}
+			}
 		}
 	}
 
@@ -130,14 +141,15 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 
 		 * Object P1(5,3)            << Should give error
 		 */
-		
 		var map = new HashMap<String, ObjectDeclaration>
 		var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
-		
+
 		for (ObjectDeclaration objectDeclaration : object.declarations) {
 			if (map.containsKey(objectDeclaration.name)) {
-				error("Field name " + objectDeclaration.name + " must be unique.", objectDeclaration, literal, DUPLICATE_NAME)
-				error("Field name " + objectDeclaration.name + " must be unique.", map.get(objectDeclaration.name), literal, DUPLICATE_NAME)
+				error("Field name " + objectDeclaration.name + " must be unique.", objectDeclaration, literal,
+					DUPLICATE_NAME)
+				error("Field name " + objectDeclaration.name + " must be unique.", map.get(objectDeclaration.name),
+					literal, DUPLICATE_NAME)
 			} else {
 				map.put(objectDeclaration.name, objectDeclaration)
 			}
@@ -151,9 +163,9 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * number i = k
 		 * number k = i      << Circular reference
 		 * 
-		 */ 
+		 */
 	}
-	
+
 	@Check
 	def void checkPropertyUniqueName(Game game) {
 		/*
@@ -164,7 +176,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 	truth value isAgent = true     << Should give error
 		 */
 	}
-	
+
 	@Check
 	def void checkUnexistingObjectPropertyIsBeingReferenced() {
 		/* 
@@ -176,12 +188,12 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 	number d = 5
 		 */
 	}
-	
+
 	@Check
 	def void checkGoTo2OnlyTakesObjectandLocation() {
 		/*
-		 * Allow goTo2 to only take Object and Location (in that order)
-		 *
+		 * Allow goTo2 to only take Object and Location (in that order, and only one of each)
+		 * 
 		 * Action Move(agent, next)
 		 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
 		 * 	Effect goTo2(next, agent)    << Should give error 
