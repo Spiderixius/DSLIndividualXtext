@@ -111,7 +111,7 @@ public class «game.name» extends FluentMachine {
 			«ENDFOR»
 			if(executionAllowed) {
 				«FOR f:a.effect.effects?.effects»
-				«f.generateEffect(a.declaration.args?.arguments)»
+				«f.generateEffect()»
 				«ENDFOR»
 			}
  			
@@ -222,19 +222,18 @@ public class «game.name» extends FluentMachine {
 	
 	// Generates code for an internal function as effect
 	// Ex: goTo(player, next) -> _iInternalFunction.goTo(player, next);
-	def dispatch CharSequence generateEffect(InternalFunction f, EList<Argument> arguments) 
+	def dispatch CharSequence generateEffect(InternalFunction f) 
 	 '''«IF f.not !== null»!«ENDIF» _iInternalFunction.«f.internal_name»(«FOR arg:f.arguments?.arguments SEPARATOR ', '»«arg.name»«ENDFOR»);'''
 	
 	// Generates code for an assignment effect
 	// player.score++ -> if (map.containsKey(player.getName()+".score")) map.put(player.getName()+".score", (int)map.get(player.getName()+".score") + 1);
 	//					 graph.execute(player.getName()+".score");
-	def dispatch CharSequence generateEffect(Assignment a, EList<Argument> arguments) 
+	def dispatch CharSequence generateEffect(Assignment a) 
 	'''if (map.containsKey(«IF a.dec_name !== null»«a.dec_name».getName()+".«ELSE»"«ENDIF»«a.assign_name.name»")) map.put(«IF a.dec_name !== null»«a.dec_name».getName()+".«ELSE»"«ENDIF»«a.assign_name.name»", «a.generateAssignment»);
 	graph.execute(«IF a.dec_name !== null»«a.dec_name».getName()+".«ELSE»"«ENDIF»«a.assign_name.name»");
 	'''
-	def dispatch CharSequence generateEffect(EF ef, EList<Argument> arguments)
-	'''«arguments.get(0).name».setPosition(«arguments.get(1).name».getPositions().get(0));'''
-	
+	def dispatch CharSequence generateEffect(EF ef)	
+	'''«ef.arguments?.arguments.get(0).name».setPosition(«ef.arguments?.arguments.get(1).name».getPositions().get(0));'''
 	
 	// Generates code for declaring a property in build method
 	// number score = Agent1.score + Agent2.score -> varProperty("score", new String[] {"Agent1.score", "Agent2.score"}, new IPropertyCallback() {

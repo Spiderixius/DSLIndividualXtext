@@ -109,8 +109,36 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	}
 
 	@Check
-	def void checkForwardReferences(Game game) {
-		// Get a list of properties
-		// Check that properties don't reference other properties that are declared later (Forward reference)
+	def void checkFieldCircularity(Game game) {
+		// Should not be able to say:
+		// number i = k
+		// number k = i
+	}
+	
+	@Check
+	def void checkPropertyUniqueName(Game game) {
+		/*
+		 * The following should give an error
+		 * 
+		 * Object P1(3,3)
+		 * 	truth value isAgent = true
+		 * 	truth value isAgent = true
+		 */
+	}
+	
+	@Check
+	def void checkUnexistingObjectPropertyIsBeingReferenced() {
+		/* 
+		 * number i = 10
+		 * number d = P2.i  << i exists but not in Object P2
+		 * Object P2(3,2)
+		 * 	number d = 5
+		 */
+	}
+	
+	@Check
+	def void checkGoTo2OnlyTakesObjectandLocation() {
+		/*
+		 */
 	}
 }

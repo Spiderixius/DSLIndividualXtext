@@ -14,6 +14,7 @@ import com.metagamedsl.metaGameLanguage.Game
 import org.eclipse.xtext.testing.validation.ValidationTestHelper
 import com.metagamedsl.metaGameLanguage.Expression
 import com.metagamedsl.metaGameLanguage.PlusEq
+import com.metagamedsl.generator.MetaGameLanguageGenerator
 
 @RunWith(XtextRunner)
 @InjectWith(MetaGameLanguageInjectorProvider)
@@ -22,7 +23,7 @@ class MetaGameLanguageParsingTest {
 	ParseHelper<Game> parseHelper
 	
 	@Inject
-	extension  ValidationTestHelper
+	extension MetaGameLanguageGenerator
 	
 	@Test
 	def void loadModel() {
