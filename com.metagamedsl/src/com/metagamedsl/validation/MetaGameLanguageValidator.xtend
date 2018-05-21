@@ -30,6 +30,11 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 */
 	@Check
 	def void checkNameStartsWithCapital(Game game) {
+		/*
+		 * Names should be capitalized! 
+		 * 
+		 * Game adventureQuest    << Should give a warning
+		 */
 		var literal = MetaGameLanguagePackage.Literals.GAME__NAME
 		if (!Character.isUpperCase(game.name.charAt(0))) {
 			warning("Name " + game.name + " should start with a capital.", literal, INVALID_NAME)
@@ -42,6 +47,12 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 */
 	@Check
 	def void checkGridCoordinates(GridSize grid) {
+		/*
+		 * Restrict Grid size to 1 and 10 (Randomly chosen)
+		 * 
+		 * Grid size(11,1)         << Should give error  
+		 */
+		
 		// Variables
 		var minValue = 1
 		var maxValue = 10
@@ -62,6 +73,16 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 */
 	@Check
 	def void checkCoordinatesComparedToGrid(GridSize grid, ObjectDeclaration obj) {
+		/*
+		 * If Grid size is set to 10,10 then coordinates in other objects/locations 
+		 * shouldn't be able to declare coordinates such as 30,10, since 10 exceeds
+		 * 10
+		 * 
+		 * Grid Size(10,10)
+		 * 
+		 * Object P1 (14,10)        << Should give an error on x coordinate
+		 */
+		
 		var obj_x = obj.coordinates.x
 		var obj_y = obj.coordinates.x
 		var grid_x = grid.size.x
@@ -80,6 +101,12 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 */
 	@Check
 	def void checkFieldsAreUniqueName(Game game) {
+		/*
+		 * The following should give an error of existing name
+		 * 
+		 * number i = 10             << Should give error
+		 * number i = 5              << Should give error
+		 */
 		var map = new HashMap<String, Property>
 		var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
 
@@ -95,6 +122,15 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 
 	@Check
 	def void checkObjectsAreUniqueName(Object object) {
+		/*
+		 * Objects should have unique names
+		 * 
+		 * Object P1(1,3) P1(3,2)    << Should give error
+		 * 	...
+		 * 
+		 * Object P1(5,3)            << Should give error
+		 */
+		
 		var map = new HashMap<String, ObjectDeclaration>
 		var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
 		
@@ -110,9 +146,12 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 
 	@Check
 	def void checkFieldCircularity(Game game) {
-		// Should not be able to say:
-		// number i = k
-		// number k = i
+		/*
+		 * Should not be able to say:
+		 * number i = k
+		 * number k = i      << Circular reference
+		 * 
+		 */ 
 	}
 	
 	@Check
@@ -121,16 +160,18 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * The following should give an error
 		 * 
 		 * Object P1(3,3)
-		 * 	truth value isAgent = true
-		 * 	truth value isAgent = true
+		 * 	truth value isAgent = true     << Should give error
+		 * 	truth value isAgent = true     << Should give error
 		 */
 	}
 	
 	@Check
 	def void checkUnexistingObjectPropertyIsBeingReferenced() {
 		/* 
+		 * You shouldn't be able to reference something that is not declared inside an object
+		 * 
 		 * number i = 10
-		 * number d = P2.i  << i exists but not in Object P2
+		 * number d = P2.i        << Should give error, i exists but not in Object P2
 		 * Object P2(3,2)
 		 * 	number d = 5
 		 */
@@ -139,6 +180,11 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	@Check
 	def void checkGoTo2OnlyTakesObjectandLocation() {
 		/*
+		 * Allow goTo2 to only take Object and Location (in that order)
+		 *
+		 * Action Move(agent, next)
+		 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
+		 * 	Effect goTo2(next, agent)    << Should give error 
 		 */
 	}
 }
