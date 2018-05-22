@@ -87,116 +87,145 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		var grid_x = game.grid.size.x
 		var grid_y = game.grid.size.y
 
-		var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__COORDINATES
+		var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__COORDINATES
+		var literalLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__COORDINATES
 
 		for (Declaration d : game.declarations) {
 			if (d instanceof Object) {
-				var object_x = d as Object
-				for (ObjectDeclaration od : object_x.declarations) {
-					// objectMap.put(od.name, od)
+				var object = d as Object
+				for (ObjectDeclaration od : object.declarations) {
 					if (od.coordinates.x < MIN_GRID_VALUE || od.coordinates.y < MIN_GRID_VALUE) {
-						error("Coordinate size must be " + MIN_GRID_VALUE + " or above", od, literal)
+						error("Coordinate size must be " + MIN_GRID_VALUE + " or above", od, literalObject)
 					} else if (od.coordinates.x > grid_x || od.coordinates.y > grid_y) {
 						error(
 							"Coordinate size (" + od.coordinates.x + ", " + od.coordinates.y +
-								") must not be more than grid size (" + grid_x + ", " + grid_y + ").", od, literal)
+								") must not be more than grid size (" + grid_x + ", " + grid_y + ").", od,
+							literalObject)
+						}
+					}
+				} else if (d instanceof Location) {
+					var location = d as Location
+					for (LocationDeclaration ld : location.declarations) {
+						for (Coordinates c : ld.coordinates) {
+							if (c.x < MIN_GRID_VALUE || c.y < MIN_GRID_VALUE) {
+								error("Coordinate size must be " + MIN_GRID_VALUE + " or above", ld, literalLocation)
+							} else if (c.x > grid_x || c.y > grid_y) {
+								error(
+									"Coordinate size (" + c.x + ", " + c.y +
+										") must not be more than grid size (" + grid_x + ", " + grid_y + ").", ld,
+									literalLocation)
+								}
+							}
+						}
+					}
+
+				}
+			}
+
+			/**
+			 * Everyone like to be unique, therefore objects and locations should have unique names.
+			 * Furthermore attributes within each object/location should also be unique
+			 */
+			@Check
+			def void checkFieldsAreUniqueName(Game game) {
+				/*
+				 * The following should give an error of existing name
+				 * 
+				 * number i = 10             << Should give error
+				 * number i = 5              << Should give error
+				 */
+				var map = new HashMap<String, Property>
+				var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
+
+				for (Property p : game.fields) {
+					if (map.containsKey(p.name)) {
+						error("Field name " + p.name + " must be unique.", p, literal, DUPLICATE_NAME)
+						error("Field name " + p.name + " must be unique.", map.get(p.name), literal, DUPLICATE_NAME)
+					} else {
+						map.put(p.name, p)
 					}
 				}
 			}
-		}
-	}
 
-	/**
-	 * Everyone like to be unique, therefore objects and locations should have unique names.
-	 * Furthermore attributes within each object/location should also be unique
-	 */
-	@Check
-	def void checkFieldsAreUniqueName(Game game) {
-		/*
-		 * The following should give an error of existing name
-		 * 
-		 * number i = 10             << Should give error
-		 * number i = 5              << Should give error
-		 */
-		var map = new HashMap<String, Property>
-		var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
+			@Check
+			def void checkObjectsAreUniqueName(Object object) {
+				/*
+				 * Objects should have unique names
+				 * 
+				 * Object P1(1,3) P1(3,2)    << Should give error
+				 * 	...
+				 * 
+				 * Object P1(5,3)            << Should give error
+				 */
+				var map = new HashMap<String, ObjectDeclaration>
+				var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
 
-		for (Property p : game.fields) {
-			if (map.containsKey(p.name)) {
-				error("Field name " + p.name + " must be unique.", p, literal, DUPLICATE_NAME)
-				error("Field name " + p.name + " must be unique.", map.get(p.name), literal, DUPLICATE_NAME)
-			} else {
-				map.put(p.name, p)
+				for (ObjectDeclaration objectDeclaration : object.declarations) {
+					if (map.containsKey(objectDeclaration.name)) {
+						error("Field name " + objectDeclaration.name + " must be unique.", objectDeclaration, literal,
+							DUPLICATE_NAME)
+						error("Field name " + objectDeclaration.name + " must be unique.",
+							map.get(objectDeclaration.name), literal, DUPLICATE_NAME)
+					} else {
+						map.put(objectDeclaration.name, objectDeclaration)
+					}
+				}
+			}
+
+			@Check
+			def void checkLocationsAreUniqueName(Location location) {
+				/*
+				 * Locations should have unique names
+				 * 
+				 * Location Wall(1,3) P1(3,2)    << Should give error
+				 * 	...
+				 * 
+				 * Object P1(5,3)            << Should give error
+				 */
+			}
+
+			@Check
+			def void checkFieldCircularity(Game game) {
+				/*
+				 * Should not be able to say:
+				 * number i = k
+				 * number k = i      << Circular reference
+				 * 
+				 */
+			}
+
+			@Check
+			def void checkPropertyUniqueName(Game game) {
+				/*
+				 * The following should give an error
+				 * 
+				 * Object P1(3,3)
+				 * 	truth value isAgent = true     << Should give error
+				 * 	truth value isAgent = true     << Should give error
+				 */
+			}
+
+			@Check
+			def void checkUnexistingObjectPropertyIsBeingReferenced() {
+				/* 
+				 * You shouldn't be able to reference something that is not declared inside an object
+				 * 
+				 * number i = 10
+				 * number d = P2.i        << Should give error, i exists but not in Object P2
+				 * Object P2(3,2)
+				 * 	number d = 5
+				 */
+			}
+
+			@Check
+			def void checkGoTo2OnlyTakesObjectandLocation() {
+				/*
+				 * Allow goTo2 to only take Object and Location (in that order, and only one of each)
+				 * 
+				 * Action Move(agent, next)
+				 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
+				 * 	Effect goTo2(next, agent)    << Should give error 
+				 */
 			}
 		}
-	}
-
-	@Check
-	def void checkObjectsAreUniqueName(Object object) {
-		/*
-		 * Objects should have unique names
-		 * 
-		 * Object P1(1,3) P1(3,2)    << Should give error
-		 * 	...
-		 * 
-		 * Object P1(5,3)            << Should give error
-		 */
-		var map = new HashMap<String, ObjectDeclaration>
-		var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
-
-		for (ObjectDeclaration objectDeclaration : object.declarations) {
-			if (map.containsKey(objectDeclaration.name)) {
-				error("Field name " + objectDeclaration.name + " must be unique.", objectDeclaration, literal,
-					DUPLICATE_NAME)
-				error("Field name " + objectDeclaration.name + " must be unique.", map.get(objectDeclaration.name),
-					literal, DUPLICATE_NAME)
-			} else {
-				map.put(objectDeclaration.name, objectDeclaration)
-			}
-		}
-	}
-
-	@Check
-	def void checkFieldCircularity(Game game) {
-		/*
-		 * Should not be able to say:
-		 * number i = k
-		 * number k = i      << Circular reference
-		 * 
-		 */
-	}
-
-	@Check
-	def void checkPropertyUniqueName(Game game) {
-		/*
-		 * The following should give an error
-		 * 
-		 * Object P1(3,3)
-		 * 	truth value isAgent = true     << Should give error
-		 * 	truth value isAgent = true     << Should give error
-		 */
-	}
-
-	@Check
-	def void checkUnexistingObjectPropertyIsBeingReferenced() {
-		/* 
-		 * You shouldn't be able to reference something that is not declared inside an object
-		 * 
-		 * number i = 10
-		 * number d = P2.i        << Should give error, i exists but not in Object P2
-		 * Object P2(3,2)
-		 * 	number d = 5
-		 */
-	}
-
-	@Check
-	def void checkGoTo2OnlyTakesObjectandLocation() {
-		/*
-		 * Allow goTo2 to only take Object and Location (in that order, and only one of each)
-		 * 
-		 * Action Move(agent, next)
-		 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
-		 * 	Effect goTo2(next, agent)    << Should give error 
-		 */
-	}
-}
+		
