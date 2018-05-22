@@ -148,7 +148,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 			}
 
 			@Check
-			def void checkObjectsAreUniqueName(Object object) {
+			def void checkDeclarationsAreUniqueName(Game game) {
 				/*
 				 * Objects should have unique names
 				 * 
@@ -157,31 +157,37 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 				 * 
 				 * Object P1(5,3)            << Should give error
 				 */
-				var map = new HashMap<String, ObjectDeclaration>
-				var literal = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
+				var objectMap = new HashMap<String, ObjectDeclaration>
+				var locationMap = new HashMap<String, LocationDeclaration>
+				
+				var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
+				var literaLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__NAME
 
-				for (ObjectDeclaration objectDeclaration : object.declarations) {
-					if (map.containsKey(objectDeclaration.name)) {
-						error("Field name " + objectDeclaration.name + " must be unique.", objectDeclaration, literal,
-							DUPLICATE_NAME)
-						error("Field name " + objectDeclaration.name + " must be unique.",
-							map.get(objectDeclaration.name), literal, DUPLICATE_NAME)
-					} else {
-						map.put(objectDeclaration.name, objectDeclaration)
+				for (Declaration d : game.declarations) {
+					if (d instanceof Object) {
+						var object = d as Object
+						for (ObjectDeclaration od : object.declarations) {
+							if (objectMap.containsKey(od.name)) {
+								error("Field name " + od.name + " must be unique.", od, literalObject, DUPLICATE_NAME)
+								error("Field name " + od.name + " must be unique.", objectMap.get(od.name),
+									literalObject, DUPLICATE_NAME)
+							} else {
+								objectMap.put(od.name, od)
+							}
+						}
+					} else if (d instanceof Location) {
+						var location = d as Location
+						for (LocationDeclaration ld : location.declarations) {
+							if (locationMap.containsKey(ld.name)) {
+								error("Field name " + ld.name + " must be unique.", ld, literaLocation, DUPLICATE_NAME)
+								error("Field name " + ld.name + " must be unique.", locationMap.get(ld.name),
+									literaLocation, DUPLICATE_NAME)
+							} else {
+								locationMap.put(ld.name, ld)
+							}
+						}
 					}
 				}
-			}
-
-			@Check
-			def void checkLocationsAreUniqueName(Location location) {
-				/*
-				 * Locations should have unique names
-				 * 
-				 * Location Wall(1,3) P1(3,2)    << Should give error
-				 * 	...
-				 * 
-				 * Object P1(5,3)            << Should give error
-				 */
 			}
 
 			@Check
