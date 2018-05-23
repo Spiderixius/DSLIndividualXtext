@@ -159,7 +159,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 				 */
 				var objectMap = new HashMap<String, ObjectDeclaration>
 				var locationMap = new HashMap<String, LocationDeclaration>
-				
+
 				var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
 				var literaLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__NAME
 
@@ -198,6 +198,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 				 * number k = i      << Circular reference
 				 * 
 				 */
+				//
 			}
 
 			@Check
@@ -209,6 +210,38 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 				 * 	truth value isAgent = true     << Should give error
 				 * 	truth value isAgent = true     << Should give error
 				 */
+				var objectPropertyMap = new HashMap<String, Property>
+				var locationPropertyMap = new HashMap<String, Property>
+
+				var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
+
+				for (Declaration d : game.declarations) {
+					if (d instanceof Object) {
+						var object = d as Object
+						for (Property p : object.properties) {
+							if (objectPropertyMap.containsKey(p.name)) {
+								error("Field name " + p.name + " must be unique.", p, literal,
+									DUPLICATE_NAME)
+								error("Field name " + p.name + " must be unique.", objectPropertyMap.get(p.name),
+									literal, DUPLICATE_NAME)
+							} else {
+								objectPropertyMap.put(p.name, p)
+							}
+						}
+					} else if (d instanceof Location) {
+						var location = d as Location
+						for (Property p : location.properties) {
+							if (locationPropertyMap.containsKey(p.name)) {
+								error("Field name " + p.name + " must be unique.", p, literal,
+									DUPLICATE_NAME)
+								error("Field name " + p.name + " must be unique.", locationPropertyMap.get(p.name),
+									literal, DUPLICATE_NAME)
+							} else {
+								locationPropertyMap.put(p.name, p)
+							}
+						}
+					}
+				}
 			}
 
 			@Check
