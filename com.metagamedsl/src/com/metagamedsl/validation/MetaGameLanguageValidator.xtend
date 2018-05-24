@@ -12,7 +12,6 @@ import com.metagamedsl.metaGameLanguage.Property
 import java.util.HashMap
 import com.metagamedsl.metaGameLanguage.Object
 import com.metagamedsl.metaGameLanguage.Declaration
-import com.metagamedsl.services.MetaGameLanguageGrammarAccess.ObjectDeclarationElements
 import com.metagamedsl.metaGameLanguage.Coordinates
 import com.metagamedsl.metaGameLanguage.LocationDeclaration
 import com.metagamedsl.metaGameLanguage.Location
@@ -75,6 +74,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	 */
 	@Check
 	def void checkCoordinatesComparedToGrid(Game game) {
+
 		/*
 		 * If Grid size is set to 10,10 then coordinates in other objects/locations 
 		 * shouldn't be able to declare coordinates such as 30,10, since 30 exceeds
@@ -84,187 +84,247 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 
 		 * Object P1 (14,10)        << Should give an error on x coordinate
 		 */
-		var grid_x = game.grid.size.x
-		var grid_y = game.grid.size.y
-
-		var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__COORDINATES
-		var literalLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__COORDINATES
-
 		for (Declaration d : game.declarations) {
-			if (d instanceof Object) {
-				var object = d as Object
-				for (ObjectDeclaration od : object.declarations) {
-					if (od.coordinates.x < MIN_GRID_VALUE || od.coordinates.y < MIN_GRID_VALUE) {
-						error("Coordinate size must be " + MIN_GRID_VALUE + " or above", od, literalObject)
-					} else if (od.coordinates.x > grid_x || od.coordinates.y > grid_y) {
-						error(
-							"Coordinate size (" + od.coordinates.x + ", " + od.coordinates.y +
-								") must not be more than grid size (" + grid_x + ", " + grid_y + ").", od,
-							literalObject)
-						}
-					}
-				} else if (d instanceof Location) {
-					var location = d as Location
-					for (LocationDeclaration ld : location.declarations) {
-						for (Coordinates c : ld.coordinates) {
-							if (c.x < MIN_GRID_VALUE || c.y < MIN_GRID_VALUE) {
-								error("Coordinate size must be " + MIN_GRID_VALUE + " or above", ld, literalLocation)
-							} else if (c.x > grid_x || c.y > grid_y) {
-								error(
-									"Coordinate size (" + c.x + ", " + c.y +
-										") must not be more than grid size (" + grid_x + ", " + grid_y + ").", ld,
-									literalLocation)
-								}
-							}
-						}
-					}
-
+			switch (d) {
+				case d instanceof Object: {
+					traverseToDeclarationCoordinates(game, d)
 				}
-			}
-
-			/**
-			 * Everyone like to be unique, therefore objects and locations should have unique names.
-			 * Furthermore attributes within each object/location should also be unique
-			 */
-			@Check
-			def void checkFieldsAreUniqueName(Game game) {
-				/*
-				 * The following should give an error of existing name
-				 * 
-				 * number i = 10             << Should give error
-				 * number i = 5              << Should give error
-				 */
-				var map = new HashMap<String, Property>
-				var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
-
-				for (Property p : game.fields) {
-					if (map.containsKey(p.name)) {
-						error("Field name " + p.name + " must be unique.", p, literal, DUPLICATE_NAME)
-						error("Field name " + p.name + " must be unique.", map.get(p.name), literal, DUPLICATE_NAME)
-					} else {
-						map.put(p.name, p)
-					}
+				case d instanceof Location: {
+					traverseToDeclarationCoordinates(game, d)
 				}
-			}
-
-			@Check
-			def void checkDeclarationsAreUniqueName(Game game) {
-				/*
-				 * Objects should have unique names
-				 * 
-				 * Object P1(1,3) P1(3,2)    << Should give error
-				 * 	...
-				 * 
-				 * Object P1(5,3)            << Should give error
-				 */
-				var objectMap = new HashMap<String, ObjectDeclaration>
-				var locationMap = new HashMap<String, LocationDeclaration>
-
-				var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
-				var literaLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__NAME
-
-				for (Declaration d : game.declarations) {
-					if (d instanceof Object) {
-						var object = d as Object
-						for (ObjectDeclaration od : object.declarations) {
-							if (objectMap.containsKey(od.name)) {
-								error("Field name " + od.name + " must be unique.", od, literalObject, DUPLICATE_NAME)
-								error("Field name " + od.name + " must be unique.", objectMap.get(od.name),
-									literalObject, DUPLICATE_NAME)
-							} else {
-								objectMap.put(od.name, od)
-							}
-						}
-					} else if (d instanceof Location) {
-						var location = d as Location
-						for (LocationDeclaration ld : location.declarations) {
-							if (locationMap.containsKey(ld.name)) {
-								error("Field name " + ld.name + " must be unique.", ld, literaLocation, DUPLICATE_NAME)
-								error("Field name " + ld.name + " must be unique.", locationMap.get(ld.name),
-									literaLocation, DUPLICATE_NAME)
-							} else {
-								locationMap.put(ld.name, ld)
-							}
-						}
-					}
+				default: {
+					System.out.println("No Declaration")
 				}
-			}
-
-			@Check
-			def void checkFieldCircularity(Game game) {
-				/*
-				 * Should not be able to say:
-				 * number i = k
-				 * number k = i      << Circular reference
-				 * 
-				 */
-				//
-			}
-
-			@Check
-			def void checkPropertyUniqueName(Game game) {
-				/*
-				 * The following should give an error
-				 * 
-				 * Object P1(3,3)
-				 * 	truth value isAgent = true     << Should give error
-				 * 	truth value isAgent = true     << Should give error
-				 */
-				var objectPropertyMap = new HashMap<String, Property>
-				var locationPropertyMap = new HashMap<String, Property>
-
-				var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
-
-				for (Declaration d : game.declarations) {
-					if (d instanceof Object) {
-						var object = d as Object
-						for (Property p : object.properties) {
-							if (objectPropertyMap.containsKey(p.name)) {
-								error("Field name " + p.name + " must be unique.", p, literal,
-									DUPLICATE_NAME)
-								error("Field name " + p.name + " must be unique.", objectPropertyMap.get(p.name),
-									literal, DUPLICATE_NAME)
-							} else {
-								objectPropertyMap.put(p.name, p)
-							}
-						}
-					} else if (d instanceof Location) {
-						var location = d as Location
-						for (Property p : location.properties) {
-							if (locationPropertyMap.containsKey(p.name)) {
-								error("Field name " + p.name + " must be unique.", p, literal,
-									DUPLICATE_NAME)
-								error("Field name " + p.name + " must be unique.", locationPropertyMap.get(p.name),
-									literal, DUPLICATE_NAME)
-							} else {
-								locationPropertyMap.put(p.name, p)
-							}
-						}
-					}
-				}
-			}
-
-			@Check
-			def void checkUnexistingObjectPropertyIsBeingReferenced() {
-				/* 
-				 * You shouldn't be able to reference something that is not declared inside an object
-				 * 
-				 * number i = 10
-				 * number d = P2.i        << Should give error, i exists but not in Object P2
-				 * Object P2(3,2)
-				 * 	number d = 5
-				 */
-			}
-
-			@Check
-			def void checkGoTo2OnlyTakesObjectandLocation() {
-				/*
-				 * Allow goTo2 to only take Object and Location (in that order, and only one of each)
-				 * 
-				 * Action Move(agent, next)
-				 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
-				 * 	Effect goTo2(next, agent)    << Should give error 
-				 */
 			}
 		}
-		
+	}
+
+	/**
+	 * Everyone like to be unique, therefore objects and locations should have unique names.
+	 * Furthermore attributes within each object/location should also be unique
+	 */
+	@Check
+	def void checkFieldsAreUniqueName(Game game) {
+		/*
+		 * The following should give an error of existing name
+		 * 
+		 * number i = 10             << Should give error
+		 * number i = 5              << Should give error
+		 */
+		var map = new HashMap<String, Property>
+		var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
+
+		for (Property p : game.fields) {
+			if (map.containsKey(p.name)) {
+				error("Field name " + p.name + " must be unique.", p, literal, DUPLICATE_NAME)
+				error("Field name " + p.name + " must be unique.", map.get(p.name), literal, DUPLICATE_NAME)
+			} else {
+				map.put(p.name, p)
+			}
+		}
+	}
+
+	@Check
+	def void checkDeclarationsAreUniqueName(Game game) {
+		/*
+		 * Objects should have unique names
+		 * 
+		 * Object P1(1,3) P1(3,2)    << Should give error
+		 * 	...
+		 * 
+		 * Object P1(5,3)            << Should give error
+		 */
+		for (Declaration d : game.declarations) {
+			switch (d) {
+				case d instanceof Object: {
+					traverseToDeclarationName(game, d)
+				}
+				case d instanceof Location: {
+					traverseToDeclarationName(game, d)
+				}
+				default: {
+					System.out.println("No Declaration")
+				}
+			}
+		}
+	}
+
+	@Check
+	def void checkFieldCircularity(Game game) {
+		/*
+		 * Should not be able to say:
+		 * number i = k
+		 * number k = i      << Circular reference
+		 * 
+		 */
+		//
+	}
+
+	@Check
+	def void checkPropertyUniqueName(Game game) {
+		/*
+		 * The following should give an error
+		 * 
+		 * Object P1(3,3)
+		 * 	truth value isAgent = true     << Should give error
+		 * 	truth value isAgent = true     << Should give error
+		 */
+
+		for (Declaration d : game.declarations) {
+			switch (d) {
+				case d instanceof Object: {
+					traverseToDeclarationProptery(game, d)
+				}
+				case d instanceof Location: {
+					traverseToDeclarationProptery(game, d)
+				}
+				default: {
+					System.out.println("No Declaration")
+				}
+			}
+		}
+	}
+
+	@Check
+	def void checkUnexistingObjectPropertyIsBeingReferenced(Game game) {
+		/* 
+		 * You shouldn't be able to reference something that is not declared inside an object
+		 * 
+		 * number i = 10
+		 * number d = P2.i        << Should give error, i exists but not in Object P2
+		 * Object P2(3,2)
+		 * 	number d = 5
+		 */
+		// Get all properties   
+		// Check if properties declared outside of Object/Location are being referenced in Object/Location
+		var objectPropertyMap = new HashMap<String, Property>
+		var propertyMap = new HashMap<String, Property>
+
+		// Get all properties in Object
+		for (Declaration d : game.declarations) {
+
+			if (d instanceof Object) {
+				var object = d as Object
+				for (Property p : object.properties) {
+					objectPropertyMap.put(p.name, p)
+				}
+			}
+		}
+
+		for (Property p : game.fields) {
+
+			propertyMap.put(p.name, p)
+
+		}
+	}
+
+	@Check
+	def void checkGoTo2OnlyTakesObjectandLocation() {
+		/*
+		 * Allow goTo2 to only take Object and Location (in that order, and only one of each)
+		 * 
+		 * Action Move(agent, next)
+		 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
+		 * 	Effect goTo2(next, agent)    << Should give error 
+		 */
+	}
+
+	// //////////////////////////////////////////////////////////////////////////////////////////////
+	// //////////////////////////////////////////////////////////////////////////////////////////////
+	// //////////////////////////////// DISPATCH METHODS ////////////////////////////////////////////
+	// //////////////////////////////////////////////////////////////////////////////////////////////
+	// //////////////////////////////////////////////////////////////////////////////////////////////
+	def dispatch void traverseToDeclarationCoordinates(Game game, Object object) {
+		var grid_x = game.grid.size.x
+		var grid_y = game.grid.size.y
+		var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__COORDINATES
+
+		for (ObjectDeclaration od : object.declarations) {
+			if (od.coordinates.x < MIN_GRID_VALUE || od.coordinates.y < MIN_GRID_VALUE) {
+				error("Coordinate size must be " + MIN_GRID_VALUE + " or above", od, literalObject)
+			} else if (od.coordinates.x > grid_x || od.coordinates.y > grid_y) {
+				error(
+					"Coordinate size (" + od.coordinates.x + ", " + od.coordinates.y +
+						") must not be more than grid size (" + grid_x + ", " + grid_y + ").", od, literalObject)
+			}
+		}
+	}
+
+	def dispatch void traverseToDeclarationCoordinates(Game game, Location location) {
+		var grid_x = game.grid.size.x
+		var grid_y = game.grid.size.y
+		var literalLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__COORDINATES
+
+		for (LocationDeclaration ld : location.declarations) {
+			for (Coordinates c : ld.coordinates) {
+				if (c.x < MIN_GRID_VALUE || c.y < MIN_GRID_VALUE) {
+					error("Coordinate size must be " + MIN_GRID_VALUE + " or above", ld, literalLocation)
+				} else if (c.x > grid_x || c.y > grid_y) {
+					error(
+						"Coordinate size (" + c.x + ", " + c.y + ") must not be more than grid size (" + grid_x + ", " +
+							grid_y + ").", ld, literalLocation)
+				}
+			}
+		}
+	}
+
+	def dispatch void traverseToDeclarationName(Game game, Object object) {
+		var objectMap = new HashMap<String, ObjectDeclaration>
+		var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
+
+		for (ObjectDeclaration od : object.declarations) {
+			if (objectMap.containsKey(od.name)) {
+				error("Field name " + od.name + " must be unique.", od, literalObject, DUPLICATE_NAME)
+				error("Field name " + od.name + " must be unique.", objectMap.get(od.name), literalObject,
+					DUPLICATE_NAME)
+			} else {
+				objectMap.put(od.name, od)
+			}
+		}
+	}
+
+	def dispatch void traverseToDeclarationName(Game game, Location location) {
+		var locationMap = new HashMap<String, LocationDeclaration>
+		var literaLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__NAME
+
+		for (LocationDeclaration ld : location.declarations) {
+			if (locationMap.containsKey(ld.name)) {
+				error("Field name " + ld.name + " must be unique.", ld, literaLocation, DUPLICATE_NAME)
+				error("Field name " + ld.name + " must be unique.", locationMap.get(ld.name), literaLocation,
+					DUPLICATE_NAME)
+			} else {
+				locationMap.put(ld.name, ld)
+			}
+		}
+	}
+
+	def dispatch void traverseToDeclarationProptery(Game game, Object object) {
+		var objectPropertyMap = new HashMap<String, Property>
+		var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
+
+		for (Property p : object.properties) {
+			if (objectPropertyMap.containsKey(p.name)) {
+				error("Field name " + p.name + " must be unique.", p, literal, DUPLICATE_NAME)
+				error("Field name " + p.name + " must be unique.", objectPropertyMap.get(p.name), literal,
+					DUPLICATE_NAME)
+			} else {
+				objectPropertyMap.put(p.name, p)
+			}
+		}
+	}
+
+	def dispatch void traverseToDeclarationProptery(Game game, Location location) {
+		var locationPropertyMap = new HashMap<String, Property>
+		var literal = MetaGameLanguagePackage.Literals.PROPERTY__NAME
+
+		for (Property p : location.properties) {
+			if (locationPropertyMap.containsKey(p.name)) {
+				error("Field name " + p.name + " must be unique.", p, literal, DUPLICATE_NAME)
+				error("Field name " + p.name + " must be unique.", locationPropertyMap.get(p.name), literal,
+					DUPLICATE_NAME)
+			} else {
+				locationPropertyMap.put(p.name, p)
+			}
+		}
+	}
+}
