@@ -27,6 +27,8 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	public static val DUPLICATE_NAME = "duplicateName"
 	public static val MIN_GRID_VALUE = 0
 	public static val MAX_GRID_VALUE = 10
+	
+	private var objectMap = new HashMap<String, ObjectDeclaration>
 
 	/**
 	 * The method checks whether the name of the game starts with a capital letter.
@@ -86,14 +88,14 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 */
 		for (Declaration d : game.declarations) {
 			switch (d) {
-				case d instanceof Object: {
+				Object: {
 					traverseToDeclarationCoordinates(game, d)
 				}
-				case d instanceof Location: {
+				Location: {
 					traverseToDeclarationCoordinates(game, d)
 				}
 				default: {
-					System.out.println("No Declaration")
+					throw new Exception("No such declaration.")
 				}
 			}
 		}
@@ -136,14 +138,14 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 */
 		for (Declaration d : game.declarations) {
 			switch (d) {
-				case d instanceof Object: {
+				Object: {
 					traverseToDeclarationName(game, d)
 				}
-				case d instanceof Location: {
+				Location: {
 					traverseToDeclarationName(game, d)
 				}
 				default: {
-					System.out.println("No Declaration")
+					throw new Exception("No such declaration.")
 				}
 			}
 		}
@@ -172,14 +174,14 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 
 		for (Declaration d : game.declarations) {
 			switch (d) {
-				case d instanceof Object: {
+				Object: {
 					traverseToDeclarationProptery(game, d)
 				}
-				case d instanceof Location: {
+				Location: {
 					traverseToDeclarationProptery(game, d)
 				}
 				default: {
-					System.out.println("No Declaration")
+					throw new Exception("No such declaration.")
 				}
 			}
 		}
@@ -269,7 +271,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	}
 
 	def dispatch void traverseToDeclarationName(Game game, Object object) {
-		var objectMap = new HashMap<String, ObjectDeclaration>
+		
 		var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
 
 		for (ObjectDeclaration od : object.declarations) {
