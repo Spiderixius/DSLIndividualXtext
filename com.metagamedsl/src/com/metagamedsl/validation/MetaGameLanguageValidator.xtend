@@ -27,8 +27,9 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	public static val DUPLICATE_NAME = "duplicateName"
 	public static val MIN_GRID_VALUE = 0
 	public static val MAX_GRID_VALUE = 10
-	
 	private var objectMap = new HashMap<String, ObjectDeclaration>
+	private var locationMap = new HashMap<String, LocationDeclaration>
+
 
 	/**
 	 * The method checks whether the name of the game starts with a capital letter.
@@ -125,7 +126,9 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 			}
 		}
 	}
-
+	
+	// Du har delt din med mig
+	
 	@Check
 	def void checkDeclarationsAreUniqueName(Game game) {
 		/*
@@ -136,6 +139,8 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 
 		 * Object P1(5,3)            << Should give error
 		 */
+		objectMap = new HashMap<String, ObjectDeclaration>
+		locationMap = new HashMap<String, LocationDeclaration>
 		for (Declaration d : game.declarations) {
 			switch (d) {
 				Object: {
@@ -273,7 +278,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	def dispatch void traverseToDeclarationName(Game game, Object object) {
 		
 		var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
-
+		
 		for (ObjectDeclaration od : object.declarations) {
 			if (objectMap.containsKey(od.name)) {
 				error("Field name " + od.name + " must be unique.", od, literalObject, DUPLICATE_NAME)
@@ -286,9 +291,8 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	}
 
 	def dispatch void traverseToDeclarationName(Game game, Location location) {
-		var locationMap = new HashMap<String, LocationDeclaration>
 		var literaLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__NAME
-
+		
 		for (LocationDeclaration ld : location.declarations) {
 			if (locationMap.containsKey(ld.name)) {
 				error("Field name " + ld.name + " must be unique.", ld, literaLocation, DUPLICATE_NAME)
