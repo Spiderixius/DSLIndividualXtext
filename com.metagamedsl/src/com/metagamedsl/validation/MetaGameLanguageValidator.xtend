@@ -204,25 +204,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 */
 		// Get all properties   
 		// Check if properties declared outside of Object/Location are being referenced in Object/Location
-		var objectPropertyMap = new HashMap<String, Property>
-		var propertyMap = new HashMap<String, Property>
-
-		// Get all properties in Object
-		for (Declaration d : game.declarations) {
-
-			if (d instanceof Object) {
-				var object = d as Object
-				for (Property p : object.properties) {
-					objectPropertyMap.put(p.name, p)
-				}
-			}
-		}
-
-		for (Property p : game.fields) {
-
-			propertyMap.put(p.name, p)
-
-		}
+		
 	}
 
 	@Check
