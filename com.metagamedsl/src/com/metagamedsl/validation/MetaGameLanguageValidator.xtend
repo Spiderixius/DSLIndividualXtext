@@ -15,8 +15,10 @@ import com.metagamedsl.metaGameLanguage.Declaration
 import com.metagamedsl.metaGameLanguage.Coordinates
 import com.metagamedsl.metaGameLanguage.LocationDeclaration
 import com.metagamedsl.metaGameLanguage.Location
-import com.metagamedsl.generator.MetaGameLanguageGenerator
-import javax.inject.Inject
+import com.metagamedsl.metaGameLanguage.WinningState
+import com.metagamedsl.metaGameLanguage.WinningCondition
+import com.metagamedsl.metaGameLanguage.WinningConditions
+import com.metagamedsl.metaGameLanguage.VarWinCondition
 
 /**
  * This class contains custom validation rules. 
@@ -213,6 +215,23 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
 		 * 	Effect PositionTo(next, agent)    << Should give error 
 		 */
+	}
+
+	@Check
+	def void checkActionHasDeclaration(Game game) {
+	}
+
+	@Check
+	def void checkWinningStateHasDeclaration(Game game) {
+		var literal = MetaGameLanguagePackage.Literals.VAR_WIN_CONDITION__VAR_NAME
+		for (WinningCondition wc : game.winningState.conditions.cond) {
+			if (wc instanceof VarWinCondition) {
+				var w = wc as VarWinCondition
+				if (objectMap.containsKey(w.var_name)) {
+					error("Error no such name", w, literal)
+				}
+			}
+		}
 	}
 
 	// //////////////////////////////////////////////////////////////////////////////////////////////
