@@ -15,6 +15,8 @@ import com.metagamedsl.metaGameLanguage.Declaration
 import com.metagamedsl.metaGameLanguage.Coordinates
 import com.metagamedsl.metaGameLanguage.LocationDeclaration
 import com.metagamedsl.metaGameLanguage.Location
+import com.metagamedsl.generator.MetaGameLanguageGenerator
+import javax.inject.Inject
 
 /**
  * This class contains custom validation rules. 
@@ -22,14 +24,12 @@ import com.metagamedsl.metaGameLanguage.Location
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#validation
  */
 class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
-
 	public static val INVALID_NAME = "invalidName"
 	public static val DUPLICATE_NAME = "duplicateName"
 	public static val MIN_GRID_VALUE = 0
 	public static val MAX_GRID_VALUE = 10
 	private var objectMap = new HashMap<String, ObjectDeclaration>
 	private var locationMap = new HashMap<String, LocationDeclaration>
-
 
 	/**
 	 * The method checks whether the name of the game starts with a capital letter.
@@ -126,9 +126,8 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 			}
 		}
 	}
-	
+
 	// Du har delt din med mig
-	
 	@Check
 	def void checkDeclarationsAreUniqueName(Game game) {
 		/*
@@ -176,7 +175,6 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 * 	truth value isAgent = true     << Should give error
 		 * 	truth value isAgent = true     << Should give error
 		 */
-
 		for (Declaration d : game.declarations) {
 			switch (d) {
 				Object: {
@@ -204,17 +202,16 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 		 */
 		// Get all properties   
 		// Check if properties declared outside of Object/Location are being referenced in Object/Location
-		
 	}
 
 	@Check
-	def void checkGoTo2OnlyTakesObjectandLocation() {
+	def void checkPositionToOnlyTakesObjectandLocation() {
 		/*
-		 * Allow goTo2 to only take Object and Location (in that order, and only one of each)
+		 * Allow PositionTo to only take Object and Location (in that order, and only one of each)
 		 * 
 		 * Action Move(agent, next)
 		 * 	Condition agent.isAgent, isNeighbor(agent, next), !next.isWall 
-		 * 	Effect goTo2(next, agent)    << Should give error 
+		 * 	Effect PositionTo(next, agent)    << Should give error 
 		 */
 	}
 
@@ -258,9 +255,9 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 	}
 
 	def dispatch void traverseToDeclarationName(Game game, Object object) {
-		
+
 		var literalObject = MetaGameLanguagePackage.Literals.OBJECT_DECLARATION__NAME
-		
+
 		for (ObjectDeclaration od : object.declarations) {
 			if (objectMap.containsKey(od.name)) {
 				error("Field name " + od.name + " must be unique.", od, literalObject, DUPLICATE_NAME)
@@ -274,7 +271,7 @@ class MetaGameLanguageValidator extends AbstractMetaGameLanguageValidator {
 
 	def dispatch void traverseToDeclarationName(Game game, Location location) {
 		var literaLocation = MetaGameLanguagePackage.Literals.LOCATION_DECLARATION__NAME
-		
+
 		for (LocationDeclaration ld : location.declarations) {
 			if (locationMap.containsKey(ld.name)) {
 				error("Field name " + ld.name + " must be unique.", ld, literaLocation, DUPLICATE_NAME)
